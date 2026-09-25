@@ -1,30 +1,9 @@
 import { Color3, MeshBuilder, Scalar, StandardMaterial, TransformNode, Vector3 } from "@babylonjs/core";
 import { FLOOR_Y, aquarium } from "../aquarium.js";
-import { buildCreature, curve, lerpColor, mirrorZ } from "./creature.js";
+import { addEyes, buildCreature, curve, lerpColor, mirrorZ, orient, steer } from "./creature.js";
 import { createPuffTexture } from "./common.js";
 
 // Hval, delfiner og spækhuggere. Kroppene bygges af creature.js og peger med snuden mod +X.
-
-// Små mørke øjne på begge sider af hovedet (hovedet bølger ikke med, så de kan sidde fast på kroppen)
-function addEyes(scene, body, [x, y, z], diameter) {
-  const mat = new StandardMaterial(`${body.name}Eye`, scene);
-  mat.diffuseColor = new Color3(0.02, 0.02, 0.03);
-  mat.specularColor = new Color3(0.6, 0.6, 0.6);
-  for (const side of [-1, 1]) {
-    const eye = MeshBuilder.CreateSphere(`${body.name}Eye`, { diameter, segments: 4 }, scene);
-    eye.material = mat;
-    eye.parent = body;
-    eye.position.set(x, y, side * z);
-  }
-}
-
-// Drej en node, så snuden (+X) peger i farten
-function orient(node, v) {
-  const speed = v.length();
-  if (speed < 0.01) return;
-  node.rotation.y = Math.atan2(-v.z, v.x);
-  node.rotation.z = Math.asin(Scalar.Clamp(v.y / speed, -0.9, 0.9));
-}
 
 // ---------- Pukkelhval ----------
 // Glider meget langsomt forbi højt oppe i disen. Dens skygge driver hen over sandet,
@@ -187,7 +166,6 @@ export function createDolphins(scene) {
   });
 
   const target = new Vector3();
-  const desired = new Vector3();
   const TURN_RATE = 1.8; // radianer i sekundet – en delfin vender i en bue, ikke på stedet
   let t = 0;
   let dir = 1;
@@ -249,20 +227,7 @@ export function createDolphins(scene) {
         target.z = Math.max(target.z, 5); // ikke helt op i kameraet
         target.y = Math.max(target.y, FLOOR_Y + 3);
 
-        // Drej snuden mod målet med en fast maksimal drejehastighed, så de altid svømmer i buer.
-        // Ligger målet lige bagud, vælges en side at vende til, i stedet for at vende på stedet.
-        target.subtractToRef(p, desired);
-        if (desired.lengthSquared() > 1) {
-          desired.normalize();
-          if (Vector3.Dot(d.heading, desired) < -0.9) desired.addInPlaceFromFloats(-d.heading.z, 0, d.heading.x).normalize();
-          const angle = Math.acos(Scalar.Clamp(Vector3.Dot(d.heading, desired), -1, 1));
-          const step = Math.min(1, (TURN_RATE * dt) / Math.max(angle, 1e-4));
-          const before = d.heading.clone();
-          Vector3.LerpToRef(d.heading, desired, step, d.heading).normalize();
-          // Krængning ind i svinget (fortegn efter drejeretningen om lodret akse)
-          const yawRate = Vector3.Cross(before, d.heading).y / dt;
-          d.bank = Scalar.Lerp(d.bank, Scalar.Clamp(-yawRate * 0.35, -0.6, 0.6), Math.min(1, dt * 3));
-        }
+        steer(d, p, target, TURN_RATE, dt);
         d.speed += (speed - d.speed) * Math.min(1, dt * 1.2);
         d.velocity.copyFrom(d.heading).scaleInPlace(d.speed);
         p.addInPlace(d.velocity.scale(dt));

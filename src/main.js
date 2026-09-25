@@ -21,7 +21,6 @@ import { createWater } from "./water.js";
 import { FLOOR_Y, GATHER_POINT, SWIM, aquarium } from "./aquarium.js";
 import { addThreatAvoidance, angleDifference, animateFish, keepInSwimArea, loadFishTemplate, randomPointIn, spawnFish, updateDeath } from "./fishModels.js";
 import { createSchool } from "./school.js";
-import { createVisitors } from "./visitors.js";
 import { createRareEvents } from "./rareEvents.js";
 import { CausticsPlugin } from "./caustics.js";
 import { createCameraDrift } from "./cameraDrift.js";
@@ -114,7 +113,6 @@ const seabed = createSeabed(scene, { floorY: FLOOR_Y });
 const water = createWater(scene, { floorY: FLOOR_Y, waterColor: WATER_COLOR, fogDensity: FOG_DENSITY });
 const bubbles = createBubbles(scene);
 const [fish, school] = await Promise.all([createFish(scene), createSchool(scene, { species: "Tetra", count: 32, length: 0.8 })]);
-const visitors = createVisitors(scene);
 const arrivals = createArrivals(fish);
 const rareEvents = createRareEvents(scene, { bubbleTexture: bubbles.texture, water });
 
@@ -124,7 +122,6 @@ scene.onBeforeRenderObservable.add(() => {
   for (const f of fish) if (!f.away) updateFish(f, dt);
   arrivals.update(dt);
   school.update(dt);
-  visitors.update(dt);
   rareEvents.update(dt);
   updateMood(dt);
 });

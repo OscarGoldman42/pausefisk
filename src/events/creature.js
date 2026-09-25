@@ -1,4 +1,4 @@
-import { Color3, Mesh, StandardMaterial, VertexData } from "@babylonjs/core";
+import { Color3, Mesh, MeshBuilder, Scalar, StandardMaterial, Vector3, VertexData } from "@babylonjs/core";
 import { CausticsPlugin } from "../caustics.js";
 
 // Bygger et lavpolygon-dyr (hval, delfin, spækhugger) som ét mesh med flade facetter og farver pr. facet.
@@ -62,17 +62,19 @@ export function buildCreature(scene, name, spec) {
   }
 
   const mesh = flatMesh(scene, name, positions, colors);
-  // Svømning: kroppen bølger op og ned, mest mod halen (hvaler slår med halen lodret, ikke fra side til side)
-  mesh.swim = (phase, amplitude) =>
+  // Svømning: kroppen bølger mest mod halen. Hvaler og delfiner slår med halen op og ned (y);
+  // hajer og fisk slår fra side til side (z, `sideways`).
+  mesh.swim = (phase, amplitude, sideways = false) =>
     mesh.deform((x) => {
       const back = Math.min(1, Math.max(0, (0.2 - x) / 0.7)); // 0 foran, 1 ved halen
       return amplitude * (back * back * Math.sin(phase - (0.5 - x) * 4) - 0.12 * Math.sin(phase));
-    });
+    }, sideways ? 2 : 1);
   return mesh;
 }
 
 // Mesh af løse trekanter (flade facetter i lavpolygon-stil) med en farve pr. hjørne.
-// `mesh.deform(fn)` flytter hvert hjørne lodret med fn(x, y, z) ud fra den oprindelige form.
+// `mesh.deform(fn, axis)` flytter hvert hjørne med fn(x, y, z) ud fra den oprindelige form,
+// langs y (axis = 1, standard) eller z (axis = 2).
 export function flatMesh(scene, name, positions, colors) {
   const indices = Array.from({ length: positions.length / 3 }, (_, i) => i);
   const normals = [];
@@ -97,8 +99,8 @@ export function flatMesh(scene, name, positions, colors) {
   const base = Float32Array.from(positions);
   const moved = Float32Array.from(positions);
   const movedNormals = new Float32Array(positions.length);
-  mesh.deform = (fn) => {
-    for (let i = 0; i < base.length; i += 3) moved[i + 1] = base[i + 1] + fn(base[i], base[i + 1], base[i + 2]);
+  mesh.deform = (fn, axis = 1) => {
+    for (let i = 0; i < base.length; i += 3) moved[i + axis] = base[i + axis] + fn(base[i], base[i + 1], base[i + 2]);
     VertexData.ComputeNormals(moved, indices, movedNormals);
     mesh.updateVerticesData("position", moved);
     mesh.updateVerticesData("normal", movedNormals);
@@ -126,3 +128,43 @@ export function mirrorZ(fin) {
 }
 
 export const lerpColor = (a, b, f) => a.map((c, i) => c + (b[i] - c) * Math.min(1, Math.max(0, f)));
+
+// Drej `swimmer.heading` (enhedsvektor) mod `target` med højst `turnRate` radianer i sekundet, så dyret
+// altid svømmer i buer. Ligger målet lige bagud, vælges en side at vende til i stedet for at vende på stedet.
+// `swimmer.bank` følger drejningen, så dyret krænger ind i svinget.
+const toTarget = new Vector3();
+export function steer(swimmer, position, target, turnRate, dt) {
+  target.subtractToRef(position, toTarget);
+  if (toTarget.lengthSquared() < 1) return;
+  toTarget.normalize();
+  const h = swimmer.heading;
+  if (Vector3.Dot(h, toTarget) < -0.9) toTarget.addInPlaceFromFloats(-h.z, 0, h.x).normalize();
+  const angle = Math.acos(Scalar.Clamp(Vector3.Dot(h, toTarget), -1, 1));
+  const step = Math.min(1, (turnRate * dt) / Math.max(angle, 1e-4));
+  const beforeX = h.x;
+  const beforeZ = h.z;
+  Vector3.LerpToRef(h, toTarget, step, h).normalize();
+  const yawRate = (beforeZ * h.x - beforeX * h.z) / dt; // drejning om lodret akse
+  swimmer.bank = Scalar.Lerp(swimmer.bank, Scalar.Clamp(-yawRate * 0.35, -0.6, 0.6), Math.min(1, dt * 3));
+}
+
+// Små mørke øjne på begge sider af hovedet (hovedet bølger ikke med, så de kan sidde fast på kroppen)
+export function addEyes(scene, body, [x, y, z], diameter) {
+  const mat = new StandardMaterial(`${body.name}Eye`, scene);
+  mat.diffuseColor = new Color3(0.02, 0.02, 0.03);
+  mat.specularColor = new Color3(0.6, 0.6, 0.6);
+  for (const side of [-1, 1]) {
+    const eye = MeshBuilder.CreateSphere(`${body.name}Eye`, { diameter, segments: 4 }, scene);
+    eye.material = mat;
+    eye.parent = body;
+    eye.position.set(x, y, side * z);
+  }
+}
+
+// Drej en node, så snuden (+X) peger i farten
+export function orient(node, v) {
+  const speed = v.length();
+  if (speed < 0.01) return;
+  node.rotation.y = Math.atan2(-v.z, v.x);
+  node.rotation.z = Math.asin(Scalar.Clamp(v.y / speed, -0.9, 0.9));
+}

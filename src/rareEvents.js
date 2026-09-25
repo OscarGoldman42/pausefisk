@@ -8,16 +8,18 @@ import { createCrabs } from "./events/crabs.js";
 import { createManta } from "./events/manta.js";
 import { createTurtle } from "./events/turtle.js";
 import { createOctopus } from "./events/octopus.js";
+import { createShark } from "./events/shark.js";
 import { createPlankton, createSunburst } from "./events/themeEvents.js";
 
 // Sjældne baggrundshændelser. Én ad gangen, i blandet rækkefølge, så man ser dem alle før nogen gentages.
-// Navnet er også parameteren i adressen, fx ?hval, der starter hændelsen med det samme.
+// Navnet er også parameteren i adressen, fx ?hval, der starter hændelsen med det samme (`aliases` er ekstra navne).
 // `when` begrænser en hændelse til et bestemt døgn-tema.
 const EVENTS = [
   { name: "dykker", create: createDiver },
   { name: "vandmand", create: createJellyfishGroup },
   { name: "vrag", create: createWreck },
   { name: "hval", create: createWhale },
+  { name: "haj", aliases: ["jagt", "gaest"], create: createShark },
   { name: "delfiner", create: createDolphins },
   { name: "spaekhugger", create: createOrcas },
   { name: "krabber", create: createCrabs },
@@ -28,14 +30,15 @@ const EVENTS = [
   { name: "solglimt", create: createSunburst, when: () => document.body.dataset.timeTheme === "morning" },
 ];
 
-const FIRST_DELAY = [40, 80]; // sekunder før den første hændelse
-const DELAY = [60, 120]; // sekunder mellem hændelserne
+// Pauser er ofte 5–10 minutter, og kursisterne er ikke altid i lokalet – så der skal ikke gå længe imellem
+const FIRST_DELAY = [15, 30]; // sekunder før den første hændelse
+const DELAY = [20, 45]; // sekunder fra en hændelse slutter, til den næste starter
 const FADE_OUT = 2.5; // sekunder – når nedtællingen når sidste minut, toner hændelsen ud
 
 export function createRareEvents(scene, context) {
   const events = new Map(EVENTS.map((e) => [e.name, { ...e, event: e.create(scene, context) }]));
   const params = new URLSearchParams(location.search);
-  let forced = [...events.keys()].find((name) => params.has(name));
+  let forced = [...events.values()].find((e) => [e.name, ...(e.aliases ?? [])].some((n) => params.has(n)))?.name;
   let timer = forced ? 3 : Scalar.RandomRange(...FIRST_DELAY);
   let queue = [];
   let active = null;

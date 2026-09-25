@@ -35,12 +35,12 @@ Siden skal åbnes via en web-server – dobbeltklik på `index.html` (`file://`)
 - Kontakten "Fiskene dør, når tiden er gået" er slået fra som standard og huskes i browseren. `&doede` i adressen slår den til (fx `?min=10&doede`).
 - Uret glider fra den valgte farve over i orange de sidste 5 minutter og bliver rødt med minus, når tiden er overskredet.
 - Akvariet følger nedtællingen: i det sidste minut samler fiskene sig midt i billedet, og de sidste 10 sekunder danner stimen selve tallene 10, 9, 8 … 0, mens uret træder i baggrunden. Ved 0 eksploderer stimen ud til alle sider. Når tiden er gået, bliver lyset en anelse varmere, og har man valgt det, dør fiskene og falder til bunds med bugen opad. Lægges der tid til, stiger en boblesky op, og fiskene vender sig og svømmer videre.
-- Med jævne mellemrum glider en stor gæst (haj, klumpfisk, sværdfisk …) forbi i baggrunden. `?gaest` i adressen sender den første forbi med det samme. Af og til går hajen på jagt efter stimen, som splitter op omkring den og samler sig igen – `?jagt` sender en jagende haj med det samme.
-- Med et par minutters mellemrum sker der noget særligt i akvariet – i blandet rækkefølge, så man ser dem alle, før nogen gentages:
+- Hvert halve til hele minut sker der noget særligt i akvariet – i blandet rækkefølge, så man ser dem alle, før nogen gentages:
   - en dykker der svømmer forbi med flagspark og bobler (`?dykker`)
   - en lille flok lysende vandmænd der pulserer sig op gennem vandet (`?vandmand`)
   - et skibsvrag der synker fra overfladen og lægger sig på bunden (`?vrag`)
   - en pukkelhval der glider langsomt forbi højt oppe, så dens skygge driver hen over sandet (`?hval`)
+  - en sortspidset revhaj der ofte går på jagt og skyder igennem stimen, som splitter op omkring den (`?haj`; `?jagt` sender en jagende haj)
   - en flok delfiner der cirkler om stimen og skyder igennem den (`?delfiner`)
   - en spækhugger med sin unge (`?spaekhugger`)
   - krabber der går sidelæns over sandet, knipser med kløerne og graver sig ned (`?krabber`)
@@ -72,7 +72,8 @@ Siden skal åbnes via en web-server – dobbeltklik på `index.html` (`file://`)
 | `src/aquarium.js` | Fælles mål og tilstand (svømmeområde, samling/spredning, store fisk de andre viger for) |
 | `src/fishModels.js` | Indlæsning af de animerede FBX-fisk og blanding af svømme-animationerne |
 | `src/school.js` | Fiskestimen (boids) |
-| `src/visitors.js` | De store gæster |
+| `src/rareEvents.js` | Styrer de sjældne hændelser: blandet rækkefølge, ventetid og pause i sidste minut |
+| `src/events/` | Én fil pr. hændelse (dykker, vandmænd, vrag, hval/delfiner/spækhugger, haj, krabber, rokke, skildpadde, blæksprutte, morild/solglimt) og `creature.js`, der bygger de lavpolygon-dyr, som hvaler, delfiner og hajen er lavet af |
 | `src/caustics.js` | Det fælles lysnet (kaustik) og material-plugin til fisk, sten og tang |
 | `src/cameraDrift.js` | Kameraets langsomme drift |
 | `src/seabed.js` | Havbunden: koraller, anemoner, vifter, søstjerner, sandriller og vaje-effekten |
