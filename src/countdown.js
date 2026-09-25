@@ -1,9 +1,17 @@
 import "@fontsource-variable/inter";
 import { createSound } from "./sound.js";
 
-// Farven glider fra hvid til orange over de sidste minutter (eller hele perioden hvis den er kortere)
+// Farven glider fra den valgte farve til orange over de sidste minutter (eller hele perioden hvis den er kortere).
+// Orange og rød er ikke med som valg, fordi de betyder "tiden er ved at løbe ud".
 const FADE_WINDOW_MS = 5 * 60 * 1000;
-const WHITE = [255, 255, 255];
+const CLOCK_COLORS = {
+  hvid: ["Hvid", [255, 255, 255]],
+  turkis: ["Turkis", [110, 231, 240]],
+  mint: ["Mint", [150, 240, 185]],
+  gul: ["Gul", [255, 224, 102]],
+  lyseroed: ["Lyserød", [255, 160, 205]],
+  lavendel: ["Lavendel", [195, 180, 255]],
+};
 const ORANGE = [255, 140, 30];
 const RED = "#ff3b30";
 const IDLE_MS = 2500;
@@ -17,6 +25,8 @@ const help = document.getElementById("help");
 const deadFishInput = document.getElementById("dead-fish");
 const messageInput = document.getElementById("message");
 const messageText = document.getElementById("message-text");
+const clockSizeInput = document.getElementById("clock-size");
+const timeThemeInput = document.getElementById("time-theme");
 const aquariumHelp = document.getElementById("aquarium-help");
 const cornerInput = document.getElementById("corner-clock");
 const CORNER_UNTIL_MS = 5 * 60_000; // uret bliver stort igen, når der er 5 minutter tilbage
@@ -24,6 +34,32 @@ const DIGITS_MS = 10_000; // de sidste 10 sekunder tæller fiskene ned
 let aquariumOnly = false;
 const soundInput = document.getElementById("sound");
 const sound = createSound();
+
+function rememberSelect(input, key, fallback) {
+  try {
+    input.value = localStorage.getItem(key) ?? fallback;
+  } catch {
+    input.value = fallback;
+  }
+  input.addEventListener("change", () => {
+    try {
+      localStorage.setItem(key, input.value);
+    } catch {}
+    applyVisualSettings();
+  });
+}
+
+function applyVisualSettings() {
+  document.body.dataset.clockSize = clockSizeInput.value;
+  document.body.dataset.timeTheme = timeThemeInput.value;
+  window.dispatchEvent(new CustomEvent("pausefisk:settings", {
+    detail: { theme: timeThemeInput.value },
+  }));
+}
+
+rememberSelect(clockSizeInput, "pausefisk.clockSize", "large");
+rememberSelect(timeThemeInput, "pausefisk.timeTheme", "noon");
+applyVisualSettings();
 
 // "Fiskene dør"-valget huskes i browseren; &doede i adressen slår det til
 const DEAD_FISH_KEY = "pausefisk.deadFish";
@@ -49,6 +85,30 @@ messageInput.addEventListener("input", () => {
     localStorage.setItem(MESSAGE_KEY, messageInput.value);
   } catch {}
 });
+
+// Urets farve vælges med farve-knapper og huskes; &farve=turkis i adressen sætter den
+const CLOCK_COLOR_KEY = "pausefisk.clockColor";
+let clockColor = "hvid";
+try {
+  clockColor = localStorage.getItem(CLOCK_COLOR_KEY) ?? clockColor;
+} catch {}
+clockColor = new URLSearchParams(location.search).get("farve") ?? clockColor;
+if (!CLOCK_COLORS[clockColor]) clockColor = "hvid";
+for (const [value, [name, rgb]] of Object.entries(CLOCK_COLORS)) {
+  const label = document.createElement("label");
+  label.className = "swatch";
+  label.title = name;
+  label.innerHTML = `<input type="radio" name="clock-color" value="${value}" aria-label="${name}" /><span style="--swatch: rgb(${rgb})"></span>`;
+  const input = label.querySelector("input");
+  input.checked = value === clockColor;
+  input.addEventListener("change", () => {
+    clockColor = value;
+    try {
+      localStorage.setItem(CLOCK_COLOR_KEY, value);
+    } catch {}
+  });
+  document.getElementById("clock-color").append(label);
+}
 
 // "Lille ur i hjørnet" huskes også; &hjoerne i adressen slår det til
 rememberToggle(cornerInput, "pausefisk.corner", "hjoerne");
@@ -172,6 +232,7 @@ setupIdleHiding();
 function start(minutes) {
   // Akvariet (main.js) læser valget, når tiden er gået
   document.body.dataset.deadFish = String(deadFishInput.checked);
+  applyVisualSettings();
   const total = Math.round(minutes * 60_000);
   state = { endTime: Date.now() + total, remaining: total, total, paused: false };
   minutesInput.value = minutes;
@@ -296,9 +357,10 @@ function render() {
 
 function fadeColor(remaining) {
   const window = Math.min(FADE_WINDOW_MS, state.total);
-  const t = Math.min(1, Math.max(0, remaining / window)); // 1 = hvid, 0 = orange
+  const t = Math.min(1, Math.max(0, remaining / window)); // 1 = valgt farve, 0 = orange
   const eased = t * t * (3 - 2 * t);
-  const c = ORANGE.map((o, i) => Math.round(o + (WHITE[i] - o) * eased));
+  const base = CLOCK_COLORS[clockColor][1];
+  const c = ORANGE.map((o, i) => Math.round(o + (base[i] - o) * eased));
   return `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
 }
 

@@ -27,12 +27,30 @@ Siden skal åbnes via en web-server – dobbeltklik på `index.html` (`file://`)
 - Skriv evt. en besked, der vises under uret (fx "Næste: Modul 3"). Den huskes til næste gang, og `&besked=...` i adressen sætter den.
 - "Vis kun akvariet" viser akvariet uden ur – fx før kurset starter eller i frokostpausen. `R` eller `Esc` går tilbage. `?akvarie` i adressen starter direkte i den tilstand.
 - Kontakten "Lille ur i hjørnet" viser uret småt nede i hjørnet, så akvariet får hele scenen; når der er 5 minutter tilbage, bliver det stort igen. `&hjoerne` i adressen slår det til.
+- Uret kan vises i stor, mellem eller lille størrelse, og valget huskes til næste gang.
+- Urets farve vælges med farveknapperne på startskærmen (hvid, turkis, mint, gul, lyserød eller lavendel) og huskes til næste gang. `&farve=turkis` i adressen sætter den.
+- Akvariet har tre døgn-temaer: morgen, middag og aften. Temaet farver vandet, lyset og lysstrålerne fra overfladen.
 - Skærmen holdes tændt, mens nedtællingen eller akvariet kører (Screen Wake Lock), så den ikke går i dvale midt i pausen.
 - Kontakten "Klokke" (slået til som standard) spiller en blød klokke, når tiden er gået, og et enkelt diskret ding, når der er ét minut tilbage. Lyden er genereret i browseren – der er ingen lydfiler – og browseren tillader først lyd efter et klik på siden. Der er bevidst ingen baggrundslyd, så underviseren kan afspille sin egen pausemusik.
 - Kontakten "Fiskene dør, når tiden er gået" er slået fra som standard og huskes i browseren. `&doede` i adressen slår den til (fx `?min=10&doede`).
-- Uret er hvidt, glider over i orange de sidste 5 minutter og bliver rødt med minus, når tiden er overskredet.
+- Uret glider fra den valgte farve over i orange de sidste 5 minutter og bliver rødt med minus, når tiden er overskredet.
 - Akvariet følger nedtællingen: i det sidste minut samler fiskene sig midt i billedet, og de sidste 10 sekunder danner stimen selve tallene 10, 9, 8 … 0, mens uret træder i baggrunden. Ved 0 eksploderer stimen ud til alle sider. Når tiden er gået, bliver lyset en anelse varmere, og har man valgt det, dør fiskene og falder til bunds med bugen opad. Lægges der tid til, stiger en boblesky op, og fiskene vender sig og svømmer videre.
 - Med jævne mellemrum glider en stor gæst (haj, klumpfisk, sværdfisk …) forbi i baggrunden. `?gaest` i adressen sender den første forbi med det samme. Af og til går hajen på jagt efter stimen, som splitter op omkring den og samler sig igen – `?jagt` sender en jagende haj med det samme.
+- Med et par minutters mellemrum sker der noget særligt i akvariet – i blandet rækkefølge, så man ser dem alle, før nogen gentages:
+  - en dykker der svømmer forbi med flagspark og bobler (`?dykker`)
+  - en lille flok lysende vandmænd der pulserer sig op gennem vandet (`?vandmand`)
+  - et skibsvrag der synker fra overfladen og lægger sig på bunden (`?vrag`)
+  - en pukkelhval der glider langsomt forbi højt oppe, så dens skygge driver hen over sandet (`?hval`)
+  - en flok delfiner der cirkler om stimen og skyder igennem den (`?delfiner`)
+  - en spækhugger med sin unge (`?spaekhugger`)
+  - krabber der går sidelæns over sandet, knipser med kløerne og graver sig ned (`?krabber`)
+  - en mantarokke der slår en kolbøtte midt i billedet (`?rokke`)
+  - en havskildpadde der svømmer op mod overfladen for at trække vejret (`?skildpadde`)
+  - en blæksprutte der træder frem fra sin camouflage, skifter farve og forsvinder i en sky af blæk (`?blaeksprutte`)
+  - kun om aftenen: lysende morild der gnistrer, hvor stimen svømmer (`?plankton`)
+  - kun om morgenen: solglimt med kraftige lysstråler og gyldent støv (`?solglimt`)
+
+  Parameteren i parentes starter hændelsen med det samme (fx `?akvarie&hval`). I det sidste minut af nedtællingen starter der ingen hændelser, og en igangværende toner ud, så stimen og tallene får scenen.
 - Over fiskene ses vandoverfladen nedefra som et bølgende lysnet. Kameraet driver langsomt, når ingen rører det, og fiskene har et dansende lysnet (kaustik) og en svag lyskant.
 - Havbunden har koraller, søanemoner og vifter der vajer, søstjerner og sandriller. Klovnefiskene holder til ved hver sin anemone, nogle arter svømmer nede ved bunden, og fladfiskene ligger på siden i sandet og glider indimellem et stykke.
 

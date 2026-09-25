@@ -22,12 +22,10 @@ const SHADER_DEFINES = ["IMAGEPROCESSINGPOSTPROCESS"];
 // Shaderne regner selv tåge-dæmpning (samme formel som scene.fogMode EXP2), så effekterne forsvinder i disen.
 export function createWater(scene, { floorY, waterColor, fogDensity }) {
   const shared = { time: 0 };
-  const materials = [
-    createBackdrop(scene, waterColor),
-    createCaustics(scene, floorY, fogDensity),
-    ...createLightRays(scene, floorY, fogDensity),
-    createSurface(scene, fogDensity),
-  ];
+  const backdrop = createBackdrop(scene, waterColor);
+  const lightMaterials = [...createLightRays(scene, floorY, fogDensity), createSurface(scene, fogDensity)];
+  const materials = [backdrop, createCaustics(scene, floorY, fogDensity), ...lightMaterials];
+  for (const mat of lightMaterials) mat.setColor3("tint", Color3.White());
   createMarineSnow(scene, floorY);
   createPostProcessing(scene);
 
@@ -36,6 +34,27 @@ export function createWater(scene, { floorY, waterColor, fogDensity }) {
     causticClock.time = shared.time;
     for (const mat of materials) mat.setFloat("time", shared.time);
   });
+
+  // Døgn-temaet farver baggrunden og toner lyset fra overfladen.
+  // setLightScale skruer ned (hvalens skygge) eller op (solglimt) for lysstrålerne og overfladen.
+  let light = Color3.White();
+  let lightScale = 1;
+  const applyTint = () => {
+    for (const mat of lightMaterials) mat.setColor3("tint", light.scale(lightScale));
+  };
+  return {
+    setColors({ horizon, top, bottom, light: tint }) {
+      backdrop.setColor3("horizon", horizon);
+      backdrop.setColor3("top", top);
+      backdrop.setColor3("bottom", bottom);
+      light = tint;
+      applyTint();
+    },
+    setLightScale(scale) {
+      lightScale = scale;
+      applyTint();
+    },
+  };
 }
 
 // ---------- Dybde-gradient bag alt ----------
@@ -125,7 +144,7 @@ void main() {
 function createCaustics(scene, floorY, fogDensity) {
   const mat = new ShaderMaterial("causticsMat", scene, { vertex: "caustics", fragment: "caustics" }, {
     attributes: ["position"],
-    uniforms: ["world", "viewProjection", "cameraPosition", "time", "fogDensity"],
+    uniforms: ["world", "viewProjection", "cameraPosition", "time", "fogDensity", "tint"],
     defines: SHADER_DEFINES,
     needAlphaBlending: true,
   });
@@ -154,6 +173,7 @@ varying vec3 vWorld;
 uniform vec3 cameraPosition;
 uniform float time;
 uniform float fogDensity;
+uniform vec3 tint;
 
 ${CAUSTICS_GLSL}
 
@@ -170,7 +190,7 @@ void main() {
 
   float light = (0.1 + 0.2 * swell) + net * 0.35 + window * (0.45 + 0.35 * net);
   float fog = exp(-pow(dist * fogDensity * 0.55, 2.0));
-  vec3 col = vec3(0.45, 0.78, 0.82) * light * fog;
+  vec3 col = vec3(0.45, 0.78, 0.82) * tint * light * fog;
   gl_FragColor = vec4(col, 1.0);
   #include<imageProcessingCompatibility>
 }`;
@@ -178,7 +198,7 @@ void main() {
 function createSurface(scene, fogDensity) {
   const mat = new ShaderMaterial("surfaceMat", scene, { vertex: "surface", fragment: "surface" }, {
     attributes: ["position"],
-    uniforms: ["world", "viewProjection", "cameraPosition", "time", "fogDensity"],
+    uniforms: ["world", "viewProjection", "cameraPosition", "time", "fogDensity", "tint"],
     defines: SHADER_DEFINES,
     needAlphaBlending: true,
   });
@@ -220,6 +240,7 @@ uniform float time;
 uniform float phase;
 uniform float strength;
 uniform float fogDensity;
+uniform vec3 tint;
 void main() {
   // Strålen bliver bredere nedad og står lidt skråt
   float center = 0.5 + (1.0 - vUV.y) * 0.12;
@@ -237,7 +258,7 @@ void main() {
   float dist = length(vWorld - cameraPosition);
   float fog = exp(-pow(dist * fogDensity * 0.6, 2.0));
   float a = core * streaks * pulse * vertical * strength * fog;
-  gl_FragColor = vec4(vec3(0.65, 0.9, 0.95) * a, 1.0);
+  gl_FragColor = vec4(vec3(0.65, 0.9, 0.95) * tint * a, 1.0);
   #include<imageProcessingCompatibility>
 }`;
 
@@ -246,7 +267,7 @@ function createLightRays(scene, floorY, fogDensity) {
   for (let i = 0; i < 12; i++) {
     const mat = new ShaderMaterial(`lightRayMat${i}`, scene, { vertex: "lightRay", fragment: "lightRay" }, {
       attributes: ["position", "uv"],
-      uniforms: ["world", "viewProjection", "cameraPosition", "time", "phase", "strength", "fogDensity"],
+      uniforms: ["world", "viewProjection", "cameraPosition", "time", "phase", "strength", "fogDensity", "tint"],
       defines: SHADER_DEFINES,
       needAlphaBlending: true,
     });

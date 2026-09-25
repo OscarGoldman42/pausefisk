@@ -25,6 +25,28 @@
         <button type="button" data-min="20">20</button>
       </div>
       <input id="message" class="message-input" type="text" maxlength="80" placeholder="Besked under uret (valgfri)" />
+      <div class="selects">
+        <label>
+          <span>Urets størrelse</span>
+          <select id="clock-size">
+            <option value="large">Stor</option>
+            <option value="medium">Mellem</option>
+            <option value="small">Lille</option>
+          </select>
+        </label>
+        <label>
+          <span>Tidspunkt på døgnet</span>
+          <select id="time-theme">
+            <option value="morning">Morgen</option>
+            <option value="noon" selected>Middag</option>
+            <option value="evening">Aften</option>
+          </select>
+        </label>
+      </div>
+      <div class="clock-colors">
+        <span id="clock-color-label">Urets farve</span>
+        <div id="clock-color" class="swatches" role="radiogroup" aria-labelledby="clock-color-label"></div>
+      </div>
       <div class="toggles">
         <label class="toggle">
           <input id="sound" type="checkbox" checked />

@@ -21,6 +21,7 @@ import { FLOOR_Y, GATHER_POINT, SWIM, aquarium } from "./aquarium.js";
 import { addThreatAvoidance, angleDifference, animateFish, keepInSwimArea, loadFishTemplate, randomPointIn, spawnFish, updateDeath } from "./fishModels.js";
 import { createSchool } from "./school.js";
 import { createVisitors } from "./visitors.js";
+import { createRareEvents } from "./rareEvents.js";
 import { CausticsPlugin } from "./caustics.js";
 import { createCameraDrift } from "./cameraDrift.js";
 import { SandRipplePlugin, SwayPlugin, createSeabed } from "./seabed.js";
@@ -31,6 +32,39 @@ registerBuiltInLoaders();
 const WATER_COLOR = new Color3(0.02, 0.22, 0.3);
 const FOG_DENSITY = 0.022;
 const BLADE_SEGMENTS = 12; // segmenter pr. tangblad
+// Døgn-temaer: vandets farve (tåge, baggrund mod overflade og dyb), lyset og tonen på lysstrålerne
+const TIME_THEMES = {
+  morning: {
+    fog: new Color3(0.05, 0.28, 0.3),
+    top: new Color3(0.34, 0.55, 0.5),
+    bottom: new Color3(0.02, 0.08, 0.1),
+    rays: new Color3(1.15, 0.95, 0.75),
+    hemi: new Color3(0.72, 0.92, 1),
+    ground: new Color3(0.12, 0.25, 0.27),
+    sun: new Color3(1, 0.72, 0.48),
+    sunIntensity: 0.7,
+  },
+  noon: {
+    fog: WATER_COLOR,
+    top: new Color3(0.16, 0.5, 0.58),
+    bottom: new Color3(0.01, 0.07, 0.11),
+    rays: new Color3(1, 1, 1),
+    hemi: new Color3(0.8, 0.95, 1),
+    ground: new Color3(0.15, 0.25, 0.3),
+    sun: new Color3(1, 1, 1),
+    sunIntensity: 0.8,
+  },
+  evening: {
+    fog: new Color3(0.14, 0.13, 0.27),
+    top: new Color3(0.36, 0.24, 0.45),
+    bottom: new Color3(0.03, 0.02, 0.08),
+    rays: new Color3(0.8, 0.55, 0.9),
+    hemi: new Color3(0.48, 0.58, 0.95),
+    ground: new Color3(0.16, 0.11, 0.24),
+    sun: new Color3(1, 0.32, 0.18),
+    sunIntensity: 0.38,
+  },
+};
 
 // Arter der svømmer rundt hver for sig: [navn, antal, længde, adfærd]. Tetra svømmer i stime (school.js).
 // Adfærd: "anemone" holder sig ved sin søanemone, "bottom" svømmer nede ved bunden,
@@ -63,7 +97,6 @@ let overtime = false;
 let moodMix = 0;
 let spotMix = 0;
 let anemoneCounter = 0; // fordeler klovnefiskene mellem søanemonerne
-const NORMAL_HEMI = new Color3(0.8, 0.95, 1);
 const OVERTIME_HEMI = new Color3(1, 0.78, 0.7);
 
 const canvas = document.getElementById("renderCanvas");
@@ -72,10 +105,11 @@ const scene = new Scene(engine);
 
 const lights = createEnvironment(scene);
 const seabed = createSeabed(scene, { floorY: FLOOR_Y });
-createWater(scene, { floorY: FLOOR_Y, waterColor: WATER_COLOR, fogDensity: FOG_DENSITY });
+const water = createWater(scene, { floorY: FLOOR_Y, waterColor: WATER_COLOR, fogDensity: FOG_DENSITY });
 const bubbles = createBubbles(scene);
 const [fish, school] = await Promise.all([createFish(scene), createSchool(scene, { species: "Tetra", count: 40, length: 0.8 })]);
 const visitors = createVisitors(scene);
+const rareEvents = createRareEvents(scene, { bubbleTexture: bubbles.texture, water });
 
 scene.onBeforeRenderObservable.add(() => {
   const dt = Math.min(engine.getDeltaTime() / 1000, 0.05);
@@ -83,6 +117,7 @@ scene.onBeforeRenderObservable.add(() => {
   for (const f of fish) updateFish(f, dt);
   school.update(dt);
   visitors.update(dt);
+  rareEvents.update(dt);
   updateMood(dt);
 });
 
@@ -97,7 +132,9 @@ function applyPhase(phase) {
 }
 window.addEventListener("pausefisk:phase", (e) => applyPhase(e.detail.phase));
 window.addEventListener("pausefisk:seconds", (e) => (aquarium.digitSeconds = e.detail.seconds));
+window.addEventListener("pausefisk:settings", (e) => applyTimeTheme(e.detail.theme));
 applyPhase(document.body.dataset.phase ?? "idle");
+applyTimeTheme(document.body.dataset.timeTheme ?? "noon");
 window.addEventListener("pausefisk:time-added", (e) => bubbles.burst(e.detail.minutes));
 
 engine.runRenderLoop(() => scene.render());
@@ -152,7 +189,20 @@ function createEnvironment(scene) {
   }
 
   createSeaweed(scene);
-  return { hemi, sun };
+  return { hemi, sun, theme: TIME_THEMES.noon };
+}
+
+function applyTimeTheme(name) {
+  const theme = TIME_THEMES[name] ?? TIME_THEMES.noon;
+  const linearClear = theme.fog.toLinearSpace();
+  scene.clearColor = new Color4(linearClear.r, linearClear.g, linearClear.b, 1);
+  scene.fogColor = theme.fog;
+  water.setColors({ horizon: theme.fog, top: theme.top, bottom: theme.bottom, light: theme.rays });
+  lights.theme = theme;
+  lights.hemi.diffuse.copyFrom(theme.hemi);
+  lights.hemi.groundColor.copyFrom(theme.ground);
+  lights.sun.diffuse.copyFrom(theme.sun);
+  lights.sun.intensity = theme.sunIntensity;
 }
 
 // Når tiden er overskredet, bliver lyset langsomt en anelse varmere og dæmpet
@@ -163,9 +213,9 @@ function updateMood(dt) {
   if (moodMix === moodTarget && spotMix === spotTarget) return;
   moodMix = Scalar.Clamp(moodMix + Math.sign(moodTarget - moodMix) * dt / 4, 0, 1);
   spotMix = Scalar.Clamp(spotMix + Math.sign(spotTarget - spotMix) * dt / 0.8, 0, 1);
-  Color3.LerpToRef(NORMAL_HEMI, OVERTIME_HEMI, moodMix, lights.hemi.diffuse);
+  Color3.LerpToRef(lights.theme.hemi, OVERTIME_HEMI, moodMix, lights.hemi.diffuse);
   lights.hemi.intensity = 0.9 * (1 - 0.55 * spotMix);
-  lights.sun.intensity = (0.8 - 0.2 * moodMix) * (1 - 0.6 * spotMix);
+  lights.sun.intensity = (lights.theme.sunIntensity - 0.2 * moodMix) * (1 - 0.6 * spotMix);
   school.setHighlight(spotMix);
 }
 
@@ -318,6 +368,7 @@ function createBubbles(scene) {
   burstSystem.start();
 
   return {
+    texture,
     burst(minutes) {
       burstSystem.manualEmitCount += 150 + minutes * 80;
     },
