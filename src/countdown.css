@@ -56,6 +56,11 @@ body.running .vignette {
   -webkit-backdrop-filter: blur(14px);
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
   text-align: center;
+  /* Er skærmen lavere end panelet (fx en mobil), kan panelet scrolle, så top og bund altid kan nås */
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .panel[hidden] {
   display: none;
@@ -536,5 +541,43 @@ body.idle.aquarium-only {
   }
   50% {
     text-shadow: 0 0 70px rgba(255, 59, 48, 0.85), 0 4px 30px rgba(0, 0, 0, 0.45);
+  }
+}
+
+/* Små skærme (mobil, lav bærbar): mindre luft, så indstillingerne helst kan ses uden at scrolle */
+@media (max-width: 480px), (max-height: 820px) {
+  .panel {
+    padding: 22px 20px 20px;
+    border-radius: 20px;
+  }
+  .panel h1 {
+    font-size: 30px;
+    margin-bottom: 8px;
+  }
+  .panel > label[for="minutes"] {
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+  .minutes-row input {
+    font-size: 50px;
+  }
+  .presets {
+    margin: 14px 0 16px;
+  }
+  .message-input {
+    margin-bottom: 14px;
+  }
+  .selects {
+    margin-bottom: 14px;
+  }
+  .clock-colors {
+    margin: -2px 0 14px;
+  }
+  .toggles {
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .start {
+    height: 48px;
   }
 }
