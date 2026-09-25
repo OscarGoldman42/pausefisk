@@ -172,10 +172,23 @@ export function createDolphins(scene) {
     root.scaling.setAll(Scalar.RandomRange(3, 3.5));
     root.setEnabled(false);
     const velocity = new Vector3();
-    return { root, body, velocity, threat: { position: root.position, radius: 3, velocity }, phase: Math.random() * 6, seed: Math.random() * 10 };
+    return {
+      root,
+      body,
+      velocity,
+      heading: new Vector3(1, 0, 0), // retningen snuden peger (enhedsvektor)
+      speed: 7,
+      bank: 0,
+      dashTarget: null,
+      threat: { position: root.position, radius: 3, velocity },
+      phase: Math.random() * 6,
+      seed: Math.random() * 10,
+    };
   });
 
   const target = new Vector3();
+  const desired = new Vector3();
+  const TURN_RATE = 1.8; // radianer i sekundet – en delfin vender i en bue, ikke på stedet
   let t = 0;
   let dir = 1;
   let hunt = null; // stimens midtpunkt, hvis de jager
@@ -194,6 +207,10 @@ export function createDolphins(scene) {
       dashTimer = 2;
       pod.forEach((d, i) => {
         d.root.position.set(-dir * (42 + i * 3), Scalar.RandomRange(1, 5), Scalar.RandomRange(5, 12));
+        d.heading.set(dir, 0, 0);
+        d.speed = 7;
+        d.bank = 0;
+        d.dashTarget = null;
         d.velocity.set(dir * 7, 0, 0);
         d.root.setEnabled(true);
         aquarium.threats.push(d.threat);
@@ -205,7 +222,14 @@ export function createDolphins(scene) {
       dashTimer -= dt;
       if (dashTimer <= 0) {
         dasher = Math.floor(Math.random() * pod.length);
-        dashTimer = Scalar.RandomRange(2, 3.5);
+        dashTimer = Scalar.RandomRange(2.5, 4);
+        // Sigter gennem stimen og et godt stykke ud på den anden side, så målet ikke pludselig ligger bag den
+        if (hunt) {
+          const d = pod[dasher];
+          const through = hunt.subtract(d.root.position);
+          through.y *= 0.3;
+          d.dashTarget = hunt.add(through.normalize().scaleInPlace(9));
+        }
       }
       let out = true;
       pod.forEach((d, i) => {
@@ -214,8 +238,8 @@ export function createDolphins(scene) {
         if (leaving) {
           // Videre ud til den anden side i bløde buer
           target.set(dir * 70, 4 + Math.sin(t * 1.2 + d.seed) * 3, 8 + i);
-        } else if (i === dasher && dashTimer > 1.2) {
-          target.copyFrom(hunt); // skyder lige igennem stimen
+        } else if (i === dasher && dashTimer > 1.2 && d.dashTarget) {
+          target.copyFrom(d.dashTarget); // skyder igennem stimen
           speed = 9;
         } else {
           // Cirkler om stimen i forskellige højder
@@ -223,12 +247,28 @@ export function createDolphins(scene) {
           target.set(hunt.x + Math.cos(a) * 6, hunt.y + Math.sin(a * 1.3 + d.seed) * 2, hunt.z + Math.sin(a) * 4);
         }
         target.z = Math.max(target.z, 5); // ikke helt op i kameraet
-        const desired = target.subtract(p).normalize().scaleInPlace(speed);
-        Vector3.LerpToRef(d.velocity, desired, Math.min(1, dt * 1.6), d.velocity);
+        target.y = Math.max(target.y, FLOOR_Y + 3);
+
+        // Drej snuden mod målet med en fast maksimal drejehastighed, så de altid svømmer i buer.
+        // Ligger målet lige bagud, vælges en side at vende til, i stedet for at vende på stedet.
+        target.subtractToRef(p, desired);
+        if (desired.lengthSquared() > 1) {
+          desired.normalize();
+          if (Vector3.Dot(d.heading, desired) < -0.9) desired.addInPlaceFromFloats(-d.heading.z, 0, d.heading.x).normalize();
+          const angle = Math.acos(Scalar.Clamp(Vector3.Dot(d.heading, desired), -1, 1));
+          const step = Math.min(1, (TURN_RATE * dt) / Math.max(angle, 1e-4));
+          const before = d.heading.clone();
+          Vector3.LerpToRef(d.heading, desired, step, d.heading).normalize();
+          // Krængning ind i svinget (fortegn efter drejeretningen om lodret akse)
+          const yawRate = Vector3.Cross(before, d.heading).y / dt;
+          d.bank = Scalar.Lerp(d.bank, Scalar.Clamp(-yawRate * 0.35, -0.6, 0.6), Math.min(1, dt * 3));
+        }
+        d.speed += (speed - d.speed) * Math.min(1, dt * 1.2);
+        d.velocity.copyFrom(d.heading).scaleInPlace(d.speed);
         p.addInPlace(d.velocity.scale(dt));
-        p.y = Math.max(p.y, FLOOR_Y + 2);
-        p.z = Math.max(p.z, 2);
+        p.y = Math.max(p.y, FLOOR_Y + 1.5); // en bred bue må ikke gå ned i sandet
         orient(d.root, d.velocity);
+        d.root.rotation.x = d.bank;
         d.phase += dt * (3 + d.velocity.length() * 0.8);
         d.body.swim(d.phase, 0.06);
         if (p.x * dir < 60) out = false;
