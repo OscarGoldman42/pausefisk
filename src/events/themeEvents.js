@@ -21,12 +21,12 @@ export function createPlankton(scene) {
   glow.emitter = new Vector3(0, 2, 10);
   glow.createBoxEmitter(new Vector3(-0.1, -0.05, -0.1), new Vector3(0.1, 0.05, 0.1), new Vector3(-22, -7, -8), new Vector3(22, 6, 8));
   // Toner op, lyser og toner ud igen i løbet af sit liv
-  // Farver over 1 bliver fanget af bloom-effekten og gløder
+  // Lige omkring bloom-tærsklen, så de lyseste gløder en smule uden at overdøve resten af scenen
   glow.addColorGradient(0, new Color4(0.2, 0.7, 1, 0));
-  glow.addColorGradient(0.2, new Color4(0.35, 1.2, 1.5, 1), new Color4(0.5, 1.4, 1.1, 0.8));
+  glow.addColorGradient(0.2, new Color4(0.25, 0.85, 1.05, 0.75), new Color4(0.35, 1, 0.85, 0.6));
   glow.addColorGradient(1, new Color4(0.1, 0.4, 0.8, 0));
-  glow.minSize = 0.08;
-  glow.maxSize = 0.22;
+  glow.minSize = 0.05;
+  glow.maxSize = 0.13;
   glow.minLifeTime = 5;
   glow.maxLifeTime = 9;
   glow.minEmitPower = 0.02;
@@ -36,11 +36,11 @@ export function createPlankton(scene) {
   const sparks = glowSystem(scene, "planktonSparks", 800, texture);
   sparks.emitter = new Vector3();
   sparks.createSphereEmitter(3.5, 1);
-  sparks.color1 = new Color4(0.9, 1.8, 2, 1);
-  sparks.color2 = new Color4(0.5, 1.5, 2, 1);
+  sparks.color1 = new Color4(0.6, 1.3, 1.5, 0.9);
+  sparks.color2 = new Color4(0.4, 1.1, 1.4, 0.8);
   sparks.colorDead = new Color4(0.2, 0.6, 1, 0);
-  sparks.minSize = 0.12;
-  sparks.maxSize = 0.3;
+  sparks.minSize = 0.08;
+  sparks.maxSize = 0.18;
   sparks.minLifeTime = 0.5;
   sparks.maxLifeTime = 1.2;
   sparks.minEmitPower = 0.1;
@@ -60,11 +60,11 @@ export function createPlankton(scene) {
     update(dt) {
       t += dt;
       // Tættere og tættere de første sekunder; stopper med at komme nye til de sidste 10 sekunder
-      glow.emitRate = t < DURATION - 10 ? Math.min(1, t / 8) * 550 : 0;
+      glow.emitRate = t < DURATION - 10 ? Math.min(1, t / 8) * 180 : 0;
       const center = aquarium.schoolCenter;
       if (center && t < DURATION - 10) {
         sparks.emitter.copyFrom(center);
-        sparks.emitRate = Math.min(1, t / 8) * 240;
+        sparks.emitRate = Math.min(1, t / 8) * 110;
       } else {
         sparks.emitRate = 0;
       }

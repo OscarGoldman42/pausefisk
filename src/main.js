@@ -14,6 +14,7 @@ import {
   ParticleSystem,
   DynamicTexture,
   NoiseProceduralTexture,
+  Frustum,
 } from "@babylonjs/core";
 import { registerBuiltInLoaders } from "@babylonjs/loaders/dynamic";
 import { createWater } from "./water.js";
@@ -70,28 +71,33 @@ const TIME_THEMES = {
 // Adfærd: "anemone" holder sig ved sin søanemone, "bottom" svømmer nede ved bunden,
 // "flat" ligger på siden på bunden og glider indimellem et stykke. Uden adfærd svømmer fisken frit.
 const SPECIES = [
-  ["Clownfish", 4, 1.2, "anemone"],
-  ["ZebraClownFish", 3, 1.2, "anemone"],
-  ["BlueTang", 3, 1.8],
-  ["YellowTang", 3, 1.6],
-  ["Tang", 2, 1.7],
-  ["Koi", 2, 2.6],
-  ["Goldfish", 2, 1.4],
-  ["ButterflyFish", 3, 1.6],
+  ["Clownfish", 3, 1.2, "anemone"],
+  ["ZebraClownFish", 2, 1.2, "anemone"],
+  ["BlueTang", 2, 1.8],
+  ["YellowTang", 2, 1.6],
+  ["Tang", 1, 1.7],
+  ["Koi", 1, 2.6],
+  ["Goldfish", 1, 1.4],
+  ["ButterflyFish", 2, 1.6],
   ["MoorishIdol", 2, 1.8],
-  ["Puffer", 2, 1.8],
-  ["RoyalGramma", 3, 1.0],
-  ["CardinalFish", 3, 1.1],
+  ["Puffer", 1, 1.8],
+  ["RoyalGramma", 2, 1.0],
+  ["CardinalFish", 2, 1.1],
   ["Lionfish", 1, 2.0],
   ["BlackLionFish", 1, 2.0],
-  ["Cowfish", 2, 1.4],
-  ["ParrotFish", 2, 2.2],
+  ["Cowfish", 1, 1.4],
+  ["ParrotFish", 1, 2.2],
   ["MandarinFish", 2, 1.1, "bottom"],
   ["CoralGrouper", 1, 2.8, "bottom"],
-  ["ArmoredCatfish", 2, 1.6, "bottom"],
+  ["ArmoredCatfish", 1, 1.6, "bottom"],
   ["Flatfish", 1, 2.0, "flat"],
   ["Turbot", 1, 2.2, "flat"],
 ];
+
+// Akvariet starter med færre fisk. Når en nedtælling eller "kun akvariet" starter, svømmer resten ind
+// fra siderne én ad gangen. Klovnefisk og bundfisk bor der i forvejen; kun de frie svømmere kommer til.
+const START_SHARE = 0.35; // andel af de frie svømmere, der er der fra start
+const ARRIVE_OVER = 150; // sekunder før alle er kommet
 
 let overtime = false;
 let moodMix = 0;
@@ -107,14 +113,16 @@ const lights = createEnvironment(scene);
 const seabed = createSeabed(scene, { floorY: FLOOR_Y });
 const water = createWater(scene, { floorY: FLOOR_Y, waterColor: WATER_COLOR, fogDensity: FOG_DENSITY });
 const bubbles = createBubbles(scene);
-const [fish, school] = await Promise.all([createFish(scene), createSchool(scene, { species: "Tetra", count: 40, length: 0.8 })]);
+const [fish, school] = await Promise.all([createFish(scene), createSchool(scene, { species: "Tetra", count: 32, length: 0.8 })]);
 const visitors = createVisitors(scene);
+const arrivals = createArrivals(fish);
 const rareEvents = createRareEvents(scene, { bubbleTexture: bubbles.texture, water });
 
 scene.onBeforeRenderObservable.add(() => {
   const dt = Math.min(engine.getDeltaTime() / 1000, 0.05);
   if (dt <= 0) return; // første frame har dt = 0, og drejehastigheden ville blive NaN
-  for (const f of fish) updateFish(f, dt);
+  for (const f of fish) if (!f.away) updateFish(f, dt);
+  arrivals.update(dt);
   school.update(dt);
   visitors.update(dt);
   rareEvents.update(dt);
@@ -441,6 +449,50 @@ async function createFish(scene) {
   return all;
 }
 
+function createArrivals(all) {
+  const swimmers = all.filter((f) => !f.behaviour).sort(() => Math.random() - 0.5);
+  const waiting = swimmers.slice(Math.ceil(swimmers.length * START_SHARE));
+  for (const f of waiting) {
+    f.away = true;
+    f.setEnabled(false);
+  }
+  const interval = ARRIVE_OVER / Math.max(1, waiting.length);
+  // Nedtællingen kan være startet (?min=10), før akvariet er indlæst
+  let started = document.body.classList.contains("running") || document.body.classList.contains("aquarium-only");
+  window.addEventListener("pausefisk:session", () => (started = true));
+  let timer = 4;
+
+  return {
+    update(dt) {
+      // Ingen nye fisk i finalen eller mens fiskene er døde
+      if (!started || waiting.length === 0 || aquarium.mode !== "normal") return;
+      timer -= dt;
+      if (timer > 0) return;
+      swimIn(waiting.shift());
+      timer = interval * Scalar.RandomRange(0.6, 1.4);
+    },
+  };
+}
+
+// Fisken starter et stykke uden for billedkanten (regnet ud fra kameraets synsfelt, så det passer til
+// enhver skærmbredde og kameravinkel) og svømmer ind mod midten
+function swimIn(f) {
+  const side = Math.random() < 0.5 ? -1 : 1;
+  f.away = false;
+  f.entering = true; // må være uden for svømmeområdet, indtil den er kommet ind
+  const start = new Vector3(side * 16, Scalar.RandomRange(0, 6), Scalar.RandomRange(-2, 8));
+  const planes = Frustum.GetPlanes(scene.getTransformMatrix());
+  const MARGIN = 4; // mindst en fiskelængde uden for kanten
+  while (planes.every((plane) => plane.dotCoordinate(start) > -MARGIN) && Math.abs(start.x) < 90) start.x += side;
+  f.pivot.position.copyFrom(start);
+  f.velocity.set(-side * f.cruise, 0, 0);
+  f.heading = Math.atan2(f.velocity.x, f.velocity.z);
+  f.pivot.rotation.y = f.heading;
+  f.target = new Vector3(-side * Scalar.RandomRange(-8, 10), Scalar.RandomRange(0, 7), Scalar.RandomRange(2, 12));
+  f.seenMode = aquarium.modeChanged;
+  f.setEnabled(true);
+}
+
 function randomSwimPoint() {
   return randomPointIn(new Vector3(SWIM.min.x, SWIM.min.y + 1, SWIM.min.z), SWIM.max);
 }
@@ -503,7 +555,9 @@ function updateFish(f, dt) {
   Vector3.LerpToRef(velocity, tmp, Math.min(1, dt * 0.9), velocity);
   pivot.position.addInPlace(velocity.scale(dt));
 
-  keepInSwimArea(pivot.position, dt);
+  // En nyankommen fisk holdes ikke inde i svømmeområdet, før den er svømmet ind i det
+  if (f.entering && Math.abs(pivot.position.x) < SWIM.max.x - 1) f.entering = false;
+  if (!f.entering) keepInSwimArea(pivot.position, dt);
 
   animateFish(f, velocity, dt);
 }

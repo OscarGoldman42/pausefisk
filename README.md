@@ -27,7 +27,7 @@ Siden skal åbnes via en web-server – dobbeltklik på `index.html` (`file://`)
 - Skriv evt. en besked, der vises under uret (fx "Næste: Modul 3"). Den huskes til næste gang, og `&besked=...` i adressen sætter den.
 - "Vis kun akvariet" viser akvariet uden ur – fx før kurset starter eller i frokostpausen. `R` eller `Esc` går tilbage. `?akvarie` i adressen starter direkte i den tilstand.
 - Kontakten "Lille ur i hjørnet" viser uret småt nede i hjørnet, så akvariet får hele scenen; når der er 5 minutter tilbage, bliver det stort igen. `&hjoerne` i adressen slår det til.
-- Uret kan vises i stor, mellem eller lille størrelse, og valget huskes til næste gang.
+- Uret kan vises i stor, mellem (standard) eller lille størrelse, og valget huskes til næste gang.
 - Urets farve vælges med farveknapperne på startskærmen (hvid, turkis, mint, gul, lyserød eller lavendel) og huskes til næste gang. `&farve=turkis` i adressen sætter den.
 - Akvariet har tre døgn-temaer: morgen, middag og aften. Temaet farver vandet, lyset og lysstrålerne fra overfladen.
 - Skærmen holdes tændt, mens nedtællingen eller akvariet kører (Screen Wake Lock), så den ikke går i dvale midt i pausen.

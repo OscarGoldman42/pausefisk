@@ -57,7 +57,7 @@ function applyVisualSettings() {
   }));
 }
 
-rememberSelect(clockSizeInput, "pausefisk.clockSize", "large");
+rememberSelect(clockSizeInput, "pausefisk.clockSize", "medium");
 rememberSelect(timeThemeInput, "pausefisk.timeTheme", "noon");
 applyVisualSettings();
 
@@ -246,6 +246,7 @@ function start(minutes) {
   clock.hidden = false;
   help.hidden = false;
   document.body.classList.add("running");
+  window.dispatchEvent(new CustomEvent("pausefisk:session")); // akvariet begynder at få flere fisk
   render();
   requestAnimationFrame(tick);
 }
@@ -269,6 +270,7 @@ function showAquariumOnly() {
   setup.hidden = true;
   aquariumHelp.hidden = false;
   document.body.classList.add("aquarium-only");
+  window.dispatchEvent(new CustomEvent("pausefisk:session"));
   document.activeElement?.blur();
 }
 
