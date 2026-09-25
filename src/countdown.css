@@ -1,0 +1,449 @@
+:root {
+  --text: #ffffff;
+  --muted: rgba(225, 242, 248, 0.75);
+  --panel: rgba(4, 28, 38, 0.72);
+  --panel-border: rgba(160, 225, 240, 0.18);
+  --accent: #ff9a2e;
+  --font: "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #03202b;
+  font-family: var(--font);
+  color: var(--text);
+}
+
+#renderCanvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+  outline: none;
+}
+
+/* Mørkere midte, så tallene altid kan læses oven på fiskene */
+.vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 60% 45% at 50% 50%, rgba(2, 16, 24, 0.25), rgba(2, 16, 24, 0) 70%);
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+body.running .vignette {
+  opacity: 1;
+}
+
+/* ---------- Opsætning ---------- */
+.panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(420px, calc(100vw - 32px));
+  box-sizing: border-box;
+  padding: 36px 36px 32px;
+  border-radius: 24px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+  text-align: center;
+}
+.panel[hidden] {
+  display: none;
+}
+.panel h1 {
+  margin: 0 0 20px;
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.panel label {
+  display: block;
+  color: var(--muted);
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+.minutes-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px;
+}
+.minutes-row input {
+  width: 150px;
+  font: 700 64px/1 var(--font);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  text-align: center;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--panel-border);
+  outline: none;
+  padding: 4px 0;
+  -moz-appearance: textfield;
+}
+.minutes-row input:focus {
+  border-bottom-color: var(--accent);
+}
+.minutes-row input::-webkit-outer-spin-button,
+.minutes-row input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.minutes-row span {
+  color: var(--muted);
+  font-size: 22px;
+}
+.presets {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 22px 0 26px;
+}
+.presets button {
+  width: 56px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font: 600 16px var(--font);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.presets button:hover,
+.presets button:focus-visible {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.35);
+  outline: none;
+}
+/* Kontakter til lyd og "døde fisk" */
+.toggles {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  width: max-content;
+  max-width: 100%;
+  margin: 0 auto 24px;
+}
+.panel label.toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  text-align: left;
+  font-size: 15px;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+.toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.toggle .switch {
+  position: relative;
+  flex: none;
+  width: 42px;
+  height: 24px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid var(--panel-border);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.toggle .switch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--text);
+  transition: transform 0.2s ease;
+}
+.toggle input:checked + .switch {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.toggle input:checked + .switch::after {
+  transform: translateX(18px);
+}
+.toggle input:focus-visible + .switch {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.toggle input:checked ~ span:last-child {
+  color: var(--text);
+}
+
+.message-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 22px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font: 500 15px var(--font);
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.message-input::placeholder {
+  color: rgba(225, 242, 248, 0.45);
+}
+.message-input:focus {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.secondary {
+  width: 100%;
+  height: 42px;
+  margin-top: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  background: transparent;
+  color: var(--muted);
+  font: 600 15px var(--font);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.secondary:hover,
+.secondary:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  outline: none;
+}
+
+.start {
+  width: 100%;
+  height: 54px;
+  border: none;
+  border-radius: 14px;
+  background: var(--accent);
+  color: #1d1000;
+  font: 700 18px var(--font);
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.1s ease;
+}
+.start:hover,
+.start:focus-visible {
+  filter: brightness(1.08);
+  outline: none;
+}
+.start:active {
+  transform: scale(0.98);
+}
+
+/* ---------- Uret ---------- */
+#clock {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  animation: fade-in 0.8s ease both;
+}
+#clock[hidden] {
+  display: none;
+}
+#clock {
+  transition: padding 1.2s ease;
+}
+#time {
+  --clock-color: #ffffff;
+  font-size: min(26vw, 42vh);
+  transition: font-size 1.2s ease, opacity 0.8s ease;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--clock-color);
+  text-shadow:
+    0 0 40px color-mix(in srgb, var(--clock-color) 35%, transparent),
+    0 4px 30px rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
+  opacity: 0.72; /* fiskene skal kunne ses bag tallene */
+  transition: opacity 0.4s ease;
+}
+#subtitle {
+  margin-top: min(2vw, 3vh);
+  font-size: min(3vw, 5vh);
+  transition: font-size 1.2s ease;
+  font-weight: 500;
+  color: var(--muted);
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.5);
+}
+#message-text {
+  margin-top: min(1.4vw, 2vh);
+  max-width: 80vw;
+  font-size: min(2.6vw, 4.2vh);
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.55);
+}
+#message-text[hidden] {
+  display: none;
+}
+
+/* Lille ur i hjørnet – akvariet får hele scenen, indtil der er 5 minutter tilbage */
+#clock.corner {
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 0 40px 96px 0;
+}
+#clock.corner #time {
+  font-size: min(9vw, 14vh);
+}
+#clock.corner #subtitle {
+  font-size: min(1.5vw, 2.6vh);
+  margin-top: 4px;
+}
+#clock.corner #message-text {
+  font-size: min(1.4vw, 2.4vh);
+  text-align: right;
+}
+
+/* De sidste 10 sekunder tæller fiskene ned – uret træder næsten helt i baggrunden,
+   og teksten under forsvinder, så den ikke ligger oven i fiskenes tal */
+body[data-phase="digits"] #time {
+  opacity: 0.1;
+}
+#subtitle,
+#message-text {
+  transition: opacity 0.6s ease, font-size 1.2s ease;
+}
+body[data-phase="digits"] #subtitle,
+body[data-phase="digits"] #message-text {
+  opacity: 0;
+}
+#clock.paused #time {
+  opacity: 0.35;
+}
+#clock.overtime #time {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ---------- Hjælp ---------- */
+#help {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px 22px;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  padding: 10px 18px;
+  border-radius: 14px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  color: var(--muted);
+  font-size: 14px;
+  transition: opacity 0.6s ease;
+}
+.add-time {
+  display: flex;
+  gap: 6px;
+  padding-right: 18px;
+  border-right: 1px solid var(--panel-border);
+}
+.add-time button {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 9px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  font: 600 14px var(--font);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.add-time button:hover,
+.add-time button:focus-visible {
+  background: rgba(255, 154, 46, 0.25);
+  border-color: var(--accent);
+  outline: none;
+}
+.add-time button:active {
+  transform: scale(0.96);
+}
+#help[hidden] {
+  display: none;
+}
+kbd {
+  display: inline-block;
+  min-width: 1.4em;
+  padding: 1px 6px;
+  margin-right: 4px;
+  border-radius: 6px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  font: 600 12px var(--font);
+  text-align: center;
+}
+
+/* Diskret hint i "kun akvariet" */
+.hint {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 22px;
+  padding: 10px 18px;
+  border-radius: 14px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  color: var(--muted);
+  font-size: 14px;
+  transition: opacity 0.6s ease;
+}
+.hint[hidden] {
+  display: none;
+}
+
+/* Skjul hjælp og musemarkør når musen ikke bruges */
+body.idle #help,
+body.idle .hint {
+  opacity: 0;
+}
+body.idle.running,
+body.idle.aquarium-only {
+  cursor: none;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pulse {
+  0%, 100% {
+    text-shadow: 0 0 30px rgba(255, 59, 48, 0.3), 0 4px 30px rgba(0, 0, 0, 0.45);
+  }
+  50% {
+    text-shadow: 0 0 70px rgba(255, 59, 48, 0.85), 0 4px 30px rgba(0, 0, 0, 0.45);
+  }
+}

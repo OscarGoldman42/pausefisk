@@ -1,0 +1,12 @@
+node_modules
+dist
+*.zip
+
+# Kun assets/FBX bruges af siden – de øvrige formater og den lokale docs-kopi deles ikke
+assets/Blends/
+assets/OBJ/
+assets/Preview.jpg
+assets/babylon-docs/
+
+# Lokalt værktøj (fx deploy til egen server)
+sync.sh

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="da">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pausefisk</title>
+    <link rel="stylesheet" href="/src/countdown.css" />
+  </head>
+  <body>
+    <canvas id="renderCanvas"></canvas>
+
+    <div class="vignette"></div>
+
+    <form id="setup" class="panel" autocomplete="off">
+      <h1>Pause</h1>
+      <label for="minutes">Hvor mange minutter?</label>
+      <div class="minutes-row">
+        <input id="minutes" type="number" min="1" max="600" step="1" value="10" inputmode="numeric" />
+        <span>min</span>
+      </div>
+      <div class="presets">
+        <button type="button" data-min="5">5</button>
+        <button type="button" data-min="10">10</button>
+        <button type="button" data-min="15">15</button>
+        <button type="button" data-min="20">20</button>
+      </div>
+      <input id="message" class="message-input" type="text" maxlength="80" placeholder="Besked under uret (valgfri)" />
+      <div class="toggles">
+        <label class="toggle">
+          <input id="sound" type="checkbox" checked />
+          <span class="switch" aria-hidden="true"></span>
+          <span>Klokke ved 0 og et ding ved 1 min</span>
+        </label>
+        <label class="toggle">
+          <input id="corner-clock" type="checkbox" />
+          <span class="switch" aria-hidden="true"></span>
+          <span>Lille ur i hjørnet (stort de sidste 5 min)</span>
+        </label>
+        <label class="toggle">
+          <input id="dead-fish" type="checkbox" />
+          <span class="switch" aria-hidden="true"></span>
+          <span>Fiskene dør, når tiden er gået</span>
+        </label>
+      </div>
+      <button type="submit" class="start">Start nedtælling</button>
+      <button type="button" id="aquarium-only" class="secondary">Vis kun akvariet</button>
+    </form>
+
+    <div id="aquarium-help" class="hint" hidden>
+      <span><kbd>R</kbd> / <kbd>Esc</kbd> tilbage</span>
+      <span><kbd>F</kbd> fuldskærm</span>
+    </div>
+
+    <div id="clock" hidden>
+      <div id="time">00:00</div>
+      <div id="subtitle"></div>
+      <div id="message-text" hidden></div>
+    </div>
+
+    <div id="help" hidden>
+      <div class="add-time">
+        <button type="button" data-add="1">+1 min</button>
+        <button type="button" data-add="2">+2 min</button>
+        <button type="button" data-add="5">+5 min</button>
+      </div>
+      <span><kbd>Mellemrum</kbd> pause</span>
+      <span><kbd>−</kbd> 1 minut</span>
+      <span><kbd>M</kbd> klokke</span>
+      <span><kbd>F</kbd> fuldskærm</span>
+      <span><kbd>R</kbd> ny nedtælling</span>
+    </div>
+
+    <script type="module" src="/src/countdown.js"></script>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
