@@ -2,6 +2,12 @@
 
 En nedtælling til pauser (fx mellem præsentationer på et kursus) vist oven på et 3D-akvarie med svømmende fisk. Bygget med [Babylon.js](https://www.babylonjs.com/) og [Vite](https://vite.dev/).
 
+![Nedtællingen over akvariet](docs/screenshots/nedtaelling.jpg)
+
+| Pukkelhval (`?hval`) | Delfiner (`?delfiner`) | Mantarokke (`?rokke`) |
+| :---: | :---: | :---: |
+| ![Pukkelhval](docs/screenshots/hval.jpg) | ![Delfiner der cirkler om stimen](docs/screenshots/delfiner.jpg) | ![Mantarokke](docs/screenshots/mantarokke.jpg) |
+
 ## Kom i gang
 
 Kræver [Node.js](https://nodejs.org/) 20 eller nyere.
