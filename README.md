@@ -44,7 +44,7 @@ Siden skal åbnes via en web-server – dobbeltklik på `index.html` (`file://`)
 - Uret glider fra den valgte farve over i orange de sidste 5 minutter og bliver rødt med minus, når tiden er overskredet.
 - Akvariet følger nedtællingen: i det sidste minut samler fiskene sig midt i billedet, og de sidste 10 sekunder danner stimen selve tallene 10, 9, 8 … 0, mens uret træder i baggrunden. Ved 0 eksploderer stimen ud til alle sider. Når tiden er gået, bliver lyset en anelse varmere, og har man valgt det, dør fiskene og falder til bunds med bugen opad. Lægges der tid til, stiger en boblesky op, og fiskene vender sig og svømmer videre.
 - Hvert halve til hele minut sker der noget særligt i akvariet – i blandet rækkefølge, så man ser dem alle, før nogen gentages:
-  - en dykker der svømmer forbi med flagspark og bobler (`?dykker`)
+  - en dykker der svømmer forbi med svømmefødder og bobler (`?dykker`)
   - en lille flok lysende vandmænd der pulserer sig op gennem vandet (`?vandmand`)
   - et skibsvrag der synker fra overfladen og lægger sig på bunden (`?vrag`)
   - en pukkelhval der glider langsomt forbi højt oppe, så dens skygge driver hen over sandet (`?hval`)
