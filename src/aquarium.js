@@ -25,6 +25,8 @@ export const aquarium = {
   threats: [],
   // Stimens midtpunkt (sættes af school.js) – hajen sigter efter det, når den jager
   schoolCenter: null,
+  // Hvor den igangværende sjældne hændelse er (sættes af rareEvents.js) – kameraet følger den blidt
+  focus: null,
   // Tallet stimen skal danne i de sidste 10 sekunder
   digitSeconds: null,
   // Tæller der stiger når tiden rammer 0 – stimen eksploderer ud til alle sider

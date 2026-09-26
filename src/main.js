@@ -236,7 +236,9 @@ function createSeaweed(scene) {
   // Bølgebevægelsen sker på grafikkortet – bladene bygges kun én gang
   new SwayPlugin(mat, { strength: 0.014, speed: 0.9 });
 
-  for (let i = 0; i < 55; i++) {
+  // Ekstra tang ude i siderne tæt på, hvor kameraet kigger ud, når det driver
+  const sidePoint = () => new Vector3((Math.random() < 0.5 ? -1 : 1) * Scalar.RandomRange(16, 38), FLOOR_Y - 0.1, Scalar.RandomRange(-5, 18));
+  for (let i = 0; i < 85; i++) {
     const tall = Math.random() < 0.6;
     const count = tall ? randomInt(3, 6) : randomInt(5, 9);
     const parts = [];
@@ -258,7 +260,7 @@ function createSeaweed(scene) {
     // Én mesh pr. klynge, med roden i (0,0,0), så vajningen kan regne med højden over bunden
     const clump = Mesh.MergeMeshes(parts, true, true);
     clump.name = `seaweed${i}`;
-    clump.position = randomSeabedPoint(-0.1);
+    clump.position = i < 55 ? randomSeabedPoint(-0.1) : sidePoint();
     clump.material = mat;
     clump.isPickable = false;
     clump.freezeWorldMatrix();

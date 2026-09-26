@@ -1,5 +1,5 @@
-import { Scalar } from "@babylonjs/core";
-import { aquarium } from "./aquarium.js";
+import { Scalar, Vector3 } from "@babylonjs/core";
+import { aquarium, FLOOR_Y } from "./aquarium.js";
 import { createDiver } from "./events/diver.js";
 import { createJellyfishGroup } from "./events/jellyfish.js";
 import { createWreck } from "./events/wreck.js";
@@ -35,6 +35,25 @@ const FIRST_DELAY = [15, 30]; // sekunder før den første hændelse
 const DELAY = [20, 45]; // sekunder fra en hændelse slutter, til den næste starter
 const FADE_OUT = 2.5; // sekunder – når nedtællingen når sidste minut, toner hændelsen ud
 
+// Hvor kameraet skal kigge hen: midt imellem de dele af hændelsen, der er i eller tæt på billedet.
+// En hval der stadig er langt ude til siden tæller ikke, så kameraet ikke stirrer på en tom kant.
+const FOCUS_REACH = 18; // så langt ude til siden (x) tæller en del med
+const FOCUS_MIN = new Vector3(-FOCUS_REACH, FLOOR_Y + 1, -2);
+const FOCUS_MAX = new Vector3(FOCUS_REACH, 8, 14);
+
+function focusOf(event) {
+  const sum = new Vector3();
+  let n = 0;
+  for (const r of event.roots) {
+    if (!r.isEnabled()) continue;
+    const p = r.getAbsolutePosition();
+    if (Math.abs(p.x) > FOCUS_REACH) continue;
+    sum.addInPlace(p);
+    n++;
+  }
+  return n ? Vector3.Clamp(sum.scaleInPlace(1 / n), FOCUS_MIN, FOCUS_MAX) : null;
+}
+
 export function createRareEvents(scene, context) {
   const events = new Map(EVENTS.map((e) => [e.name, { ...e, event: e.create(scene, context) }]));
   const params = new URLSearchParams(location.search);
@@ -63,6 +82,7 @@ export function createRareEvents(scene, context) {
     for (const root of active.roots) for (const m of root.getChildMeshes()) m.visibility = 1;
     active = null;
     fade = null;
+    aquarium.focus = null;
     timer = Scalar.RandomRange(...DELAY);
   }
 
@@ -77,6 +97,7 @@ export function createRareEvents(scene, context) {
           for (const m of fade.meshes) m.visibility = Math.min(m.visibility, f);
           if (f === 0) return finish();
         }
+        aquarium.focus = fade ? null : focusOf(active); // når den toner ud, glider kameraet hjem til uret
         if (active.done) finish();
         return;
       }

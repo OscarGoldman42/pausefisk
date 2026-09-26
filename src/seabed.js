@@ -318,6 +318,21 @@ export function createSeabed(scene, { floorY }) {
     for (let k = 0; k < 3; k++) place("starfish", ...around(4), Scalar.RandomRange(0.7, 1.2));
   });
 
+  // Rev ude i siderne, så bunden ikke ser tom ud, når kameraet driver eller kigger derud
+  const sidePatches = [
+    [-19, -1], [-24, 7], [-31, 2], [-28, 15], [-37, 9],
+    [19, 0], [24, 8], [31, 3], [28, 16], [37, 10],
+  ];
+  for (const [cx, cz] of sidePatches) {
+    const around = (r) => [cx + Scalar.RandomRange(-r, r), cz + Scalar.RandomRange(-r, r)];
+    if (Math.random() < 0.5) place("anemone", ...around(1.5), Scalar.RandomRange(1.0, 1.4));
+    for (let k = 0; k < 2; k++) place("brain", ...around(3), Scalar.RandomRange(0.9, 1.6));
+    for (let k = 0; k < 4; k++) place("branch", ...around(3.5), Scalar.RandomRange(1.3, 2.5));
+    for (let k = 0; k < 2; k++) place("tube", ...around(3.5), Scalar.RandomRange(1.0, 1.7));
+    if (Math.random() < 0.8) place("fan", ...around(3.5), Scalar.RandomRange(1.2, 2.0));
+    for (let k = 0; k < 3; k++) place("starfish", ...around(4.5), Scalar.RandomRange(0.7, 1.2));
+  }
+
   // Spredte koraller længere ude giver dybde
   const types = ["branch", "branch", "brain", "tube", "fan", "starfish"];
   for (let i = 0; i < 45; i++) {
