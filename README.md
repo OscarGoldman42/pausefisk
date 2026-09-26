@@ -2,6 +2,8 @@
 
 En nedtælling til pauser (fx mellem præsentationer på et kursus) vist oven på et 3D-akvarie med svømmende fisk. Bygget med [Babylon.js](https://www.babylonjs.com/) og [Vite](https://vite.dev/).
 
+Pausefisk kan også bare bruges som en hyggelig baggrund uden nedtælling – fx på storskærmen før kurset starter, i frokostpausen eller i et venteværelse. Vælg "Vis kun akvariet" på startskærmen, eller åbn siden med `?akvarie` i adressen.
+
 ![Nedtællingen over akvariet](docs/screenshots/nedtaelling.jpg)
 
 | Pukkelhval (`?hval`) | Delfiner (`?delfiner`) | Mantarokke (`?rokke`) |
