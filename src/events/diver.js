@@ -122,7 +122,7 @@ export function createDiver(scene, { bubbleTexture }) {
       this.done = false;
       dir = Math.random() < 0.5 ? 1 : -1;
       baseY = Scalar.RandomRange(2, 5);
-      root.position.set(-dir * 32, baseY, Scalar.RandomRange(7, 11));
+      root.position.set(-dir * 38, baseY, Scalar.RandomRange(13, 17));
       root.rotation.y = dir > 0 ? 0 : Math.PI;
       velocity.set(dir * SPEED, 0, 0);
       breath = 1;
@@ -150,7 +150,7 @@ export function createDiver(scene, { bubbleTexture }) {
         bubbles.manualEmitCount = Math.round(Scalar.RandomRange(12, 22));
         breath = Scalar.RandomRange(3, 4.5);
       }
-      this.done = root.position.x * dir > 34;
+      this.done = root.position.x * dir > 40;
     },
     stop() {
       root.setEnabled(false);

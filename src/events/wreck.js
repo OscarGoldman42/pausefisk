@@ -85,7 +85,7 @@ export function createWreck(scene, { bubbleTexture }) {
       this.done = false;
       landed = false;
       const side = Math.random() < 0.5 ? -1 : 1;
-      root.position.set(side * Scalar.RandomRange(3, 7), START_Y, Scalar.RandomRange(16, 20));
+      root.position.set(side * Scalar.RandomRange(3, 7), START_Y, Scalar.RandomRange(21, 25));
       root.rotation.set(0, Scalar.RandomRange(-0.5, 0.5) + Math.PI / 2 + side * 0.3, 0);
       roll = Scalar.RandomRange(0.25, 0.4) * (Math.random() < 0.5 ? -1 : 1);
       spin = Scalar.RandomRange(-0.06, 0.06);
